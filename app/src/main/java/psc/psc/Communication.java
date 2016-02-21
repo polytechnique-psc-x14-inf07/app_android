@@ -9,12 +9,20 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.StringBufferInputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 
 /**
  * Created by guillaume on 08/02/16.
  */
 public class Communication extends Activity {
+    public static Socket socket = null;
+    public static Thread t1;
+    public static String srv = "127.0.0.1";
+    public static int port = 2009;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,16 +43,25 @@ public class Communication extends Activity {
 
             @Override
             public void onClick(View v) {
-                String req = (String) ((TextView) findViewById(R.id.requete)).getText();
-                String arg = (String) ((TextView) findViewById(R.id.argument)).getText();
+                String req = ((TextView) findViewById(R.id.requete)).getText().toString();
+                String arg = ((TextView) findViewById(R.id.argument)).getText().toString();
                 send(req, arg);
             }
         });
-
     }
 
     public void init() {
-
+        try {
+            System.out.println("Demande de connexion");
+            socket = new Socket(srv,port);
+            System.out.println("Connexion établie avec le serveur, authentification :"); // Si le message s'affiche c'est que je suis connecté
+            t1 = new Thread(new Connexion(socket));
+            t1.start();
+        } catch (UnknownHostException e) {
+            System.err.println("Impossible de se connecter à l'adresse "+socket.getLocalAddress());
+        } catch (IOException e) {
+            System.err.println("Aucun serveur à l'écoute du port "+port+".");
+        }
     }
 
     public void afficher(String s) {
@@ -52,7 +69,8 @@ public class Communication extends Activity {
     }
 
     public void send(String req, String arg) {
-
+        StringBufferInputStream s = new StringBufferInputStream(req+" "+arg);
+        System.setIn(s);
     }
 
     public void parse(String reponse) {
